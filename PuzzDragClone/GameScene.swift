@@ -28,42 +28,45 @@ class GameScene: SKScene {
     
     private var orb = SKSpriteNode()
     private var orbs = [[Orb]]()
+    private var tileBackground : SKTileMapNode!
     var prevPt : CGPoint!
     
     override func didMove(to view: SKView) {
-        for index in 0...30{ // initialize all orbs in the board
-            var text = SKTexture() // contains the orb texture
-            let currorb = Orb() // current orb to be initialized
-            let rand = arc4random_uniform(6)
-            switch rand{ // choose color of orb based on random value
-            case 0:
-                currorb.type = Type.R
-                text = SKTexture(imageNamed: currorb.type.rawValue)
-            case 1:
-                currorb.type = Type.G
-                text = SKTexture(imageNamed: currorb.type.rawValue)
-            case 2:
-                currorb.type = Type.B
-                text = SKTexture(imageNamed: currorb.type.rawValue)
-            case 3:
-                currorb.type = Type.L
-                text = SKTexture(imageNamed: currorb.type.rawValue)
-            case 4:
-                currorb.type = Type.D
-                text = SKTexture(imageNamed: currorb.type.rawValue)
-            default:
-                currorb.type = Type.H
-                text = SKTexture(imageNamed: currorb.type.rawValue)
+        let tileBackground = childNode(withName: "BGTiles") as? SKTileMapNode
+        self.tileBackground = tileBackground
+        for column in 0...5{
+            for row in 0...4{ // initialize all orbs in the board
+                var text = SKTexture() // contains the orb texture
+                let currorb = Orb() // current orb to be initialized
+                let rand = arc4random_uniform(6)
+                switch rand{ // choose color of orb based on random value
+                case 0:
+                    currorb.type = Type.R
+                    text = SKTexture(imageNamed: currorb.type.rawValue)
+                case 1:
+                    currorb.type = Type.G
+                    text = SKTexture(imageNamed: currorb.type.rawValue)
+                case 2:
+                    currorb.type = Type.B
+                    text = SKTexture(imageNamed: currorb.type.rawValue)
+                case 3:
+                    currorb.type = Type.L
+                    text = SKTexture(imageNamed: currorb.type.rawValue)
+                case 4:
+                    currorb.type = Type.D
+                    text = SKTexture(imageNamed: currorb.type.rawValue)
+                default:
+                    currorb.type = Type.H
+                    text = SKTexture(imageNamed: currorb.type.rawValue)
+                }
+                
+                currorb.Node = SKSpriteNode(texture: text)
+                currorb.Node.position = tileBackground!.centerOfTile(atColumn: column, row: row)
+                print("\(tileBackground!.centerOfTile(atColumn: column, row: row))\n")
+                currorb.Node.setScale(1.15)
+                self.addChild(currorb.Node)
             }
-            
-            currorb.Node = SKSpriteNode(texture: text)
         }
-        let orbtexture = SKTexture(imageNamed: "ball-dark")
-        orb = SKSpriteNode(texture: orbtexture)
-        orb.position = CGPoint(x:-280, y:-40)
-        orb.setScale(2)
-        self.addChild(orb)
-        print("x: \(orb.position.x), y: \(orb.position.y)")
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {

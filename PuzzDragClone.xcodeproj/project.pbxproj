@@ -17,6 +17,7 @@
 		522B8B6920D0F18500013F64 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 522B8B6720D0F18500013F64 /* LaunchScreen.storyboard */; };
 		522B8B7420D0F18500013F64 /* PuzzDragCloneTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 522B8B7320D0F18500013F64 /* PuzzDragCloneTests.swift */; };
 		522B8B7F20D0F18600013F64 /* PuzzDragCloneUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 522B8B7E20D0F18600013F64 /* PuzzDragCloneUITests.swift */; };
+		5289168320DD65700002D573 /* tiles.sks in Resources */ = {isa = PBXBuildFile; fileRef = 5289168220DD65700002D573 /* tiles.sks */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -53,6 +54,7 @@
 		522B8B7A20D0F18600013F64 /* PuzzDragCloneUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PuzzDragCloneUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		522B8B7E20D0F18600013F64 /* PuzzDragCloneUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PuzzDragCloneUITests.swift; sourceTree = "<group>"; };
 		522B8B8020D0F18600013F64 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		5289168220DD65700002D573 /* tiles.sks */ = {isa = PBXFileReference; lastKnownFileType = file.sks; path = tiles.sks; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -112,6 +114,7 @@
 				522B8B6520D0F18500013F64 /* Assets.xcassets */,
 				522B8B6720D0F18500013F64 /* LaunchScreen.storyboard */,
 				522B8B6A20D0F18500013F64 /* Info.plist */,
+				5289168220DD65700002D573 /* tiles.sks */,
 			);
 			path = PuzzDragClone;
 			sourceTree = "<group>";
@@ -243,6 +246,7 @@
 				522B8B6620D0F18500013F64 /* Assets.xcassets in Resources */,
 				522B8B6920D0F18500013F64 /* LaunchScreen.storyboard in Resources */,
 				522B8B5D20D0F18400013F64 /* Actions.sks in Resources */,
+				5289168320DD65700002D573 /* tiles.sks in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

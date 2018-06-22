@@ -9,81 +9,76 @@
 import SpriteKit
 import GameplayKit
 
+enum Type : String {
+    case R = "ball-fire"
+    case G = "ball-wood"
+    case B = "ball-water"
+    case L = "ball-light"
+    case D = "ball-dark"
+    case H = "ball-heart"
+    case other = "garbage"
+}
+
+class Orb {
+    var Node = SKSpriteNode()
+    var type = Type.other
+}
+
 class GameScene: SKScene {
     
-    private var label : SKLabelNode?
-    private var spinnyNode : SKShapeNode?
+    private var orb = SKSpriteNode()
+    private var orbs = [[Orb]]()
+    var prevPt : CGPoint!
     
     override func didMove(to view: SKView) {
-        
-        // Get label node from scene and store it for use later
-        self.label = self.childNode(withName: "//helloLabel") as? SKLabelNode
-        if let label = self.label {
-            label.alpha = 0.0
-            label.run(SKAction.fadeIn(withDuration: 2.0))
-        }
-        
-        // Create shape node to use during mouse interaction
-        let w = (self.size.width + self.size.height) * 0.05
-        self.spinnyNode = SKShapeNode.init(rectOf: CGSize.init(width: w, height: w), cornerRadius: w * 0.3)
-        
-        if let spinnyNode = self.spinnyNode {
-            spinnyNode.lineWidth = 2.5
+        for index in 0...30{ // initialize all orbs in the board
+            var text = SKTexture() // contains the orb texture
+            let currorb = Orb() // current orb to be initialized
+            let rand = arc4random_uniform(6)
+            switch rand{ // choose color of orb based on random value
+            case 0:
+                currorb.type = Type.R
+                text = SKTexture(imageNamed: currorb.type.rawValue)
+            case 1:
+                currorb.type = Type.G
+                text = SKTexture(imageNamed: currorb.type.rawValue)
+            case 2:
+                currorb.type = Type.B
+                text = SKTexture(imageNamed: currorb.type.rawValue)
+            case 3:
+                currorb.type = Type.L
+                text = SKTexture(imageNamed: currorb.type.rawValue)
+            case 4:
+                currorb.type = Type.D
+                text = SKTexture(imageNamed: currorb.type.rawValue)
+            default:
+                currorb.type = Type.H
+                text = SKTexture(imageNamed: currorb.type.rawValue)
+            }
             
-            spinnyNode.run(SKAction.repeatForever(SKAction.rotate(byAngle: CGFloat(Double.pi), duration: 1)))
-            spinnyNode.run(SKAction.sequence([SKAction.wait(forDuration: 0.5),
-                                              SKAction.fadeOut(withDuration: 0.5),
-                                              SKAction.removeFromParent()]))
+            currorb.Node = SKSpriteNode(texture: text)
         }
-    }
-    
-    
-    func touchDown(atPoint pos : CGPoint) {
-        if let n = self.spinnyNode?.copy() as! SKShapeNode? {
-            n.position = pos
-            n.strokeColor = SKColor.green
-            self.addChild(n)
-        }
-    }
-    
-    func touchMoved(toPoint pos : CGPoint) {
-        if let n = self.spinnyNode?.copy() as! SKShapeNode? {
-            n.position = pos
-            n.strokeColor = SKColor.blue
-            self.addChild(n)
-        }
-    }
-    
-    func touchUp(atPoint pos : CGPoint) {
-        if let n = self.spinnyNode?.copy() as! SKShapeNode? {
-            n.position = pos
-            n.strokeColor = SKColor.red
-            self.addChild(n)
-        }
+        let orbtexture = SKTexture(imageNamed: "ball-dark")
+        orb = SKSpriteNode(texture: orbtexture)
+        orb.position = CGPoint(x:-280, y:-40)
+        orb.setScale(2)
+        self.addChild(orb)
+        print("x: \(orb.position.x), y: \(orb.position.y)")
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        if let label = self.label {
-            label.run(SKAction.init(named: "Pulse")!, withKey: "fadeInOut")
-        }
         
-        for t in touches { self.touchDown(atPoint: t.location(in: self)) }
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for t in touches { self.touchMoved(toPoint: t.location(in: self)) }
-    }
-    
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for t in touches { self.touchUp(atPoint: t.location(in: self)) }
-    }
-    
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for t in touches { self.touchUp(atPoint: t.location(in: self)) }
-    }
-    
-    
-    override func update(_ currentTime: TimeInterval) {
-        // Called before each frame is rendered
+        for touch: AnyObject in touches {
+            let location = touch.location(in: self)
+            if(nodes(at: location).contains(orb))
+            {
+                orb.run(SKAction.moveBy(x:location.x - orb.position.x, y:location.y - orb.position.y, duration: 0))
+                print("x: \(orb.position.x), y: \(orb.position.y)")
+            }
+        }
+        
     }
 }

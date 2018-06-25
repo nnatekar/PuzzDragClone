@@ -34,23 +34,38 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     private var orbs = [Orb]() // used to hold entire board of orbs
     private var tileBackground : SKTileMapNode! // contains background of tiles
     private var movingOrb = Orb()
-    private var timesCalled = 0
+    private var indToOrb = [Int : Int]() // dictionary containing translation of index to orb
     
     func didBegin(_ contact: SKPhysicsContact){
+        // body A will be the moving orb
+        // body b will be the orb to switch with
         let posA = movingOrb.originalPos
-       // contact.bodyA.node?.run(SKAction.move(to: (contact.bodyB.node?.position)!, duration: 0))
-       // contact.bodyB.node?.run(SKAction.move(to: posA!, duration:0))
-        let rowB = tileBackground.tileRowIndex(fromPosition: contact.bodyB.node!.position)
-        let colB = tileBackground.tileColumnIndex(fromPosition: contact.bodyB.node!.position)
-        if(timesCalled == 0){
-        print("bodyApos: \(contact.bodyA.node!.position), bodyAmove: \(tileBackground.centerOfTile(atColumn: colB, row: rowB))\nbodyBpos: \(contact.bodyB.node!.position), bodyBmove: \(tileBackground.centerOfTile(atColumn: posA[1], row: posA[0]))\n\n")
-            timesCalled+=1
-        }
-       //
+        let rowMajA = rowMajorConversion(column: posA[1], row: posA[0])
+        var bodyb = SKNode()
         
-        contact.bodyB.node?.run(SKAction.move(to: tileBackground.centerOfTile(atColumn: posA[1], row: posA[0]), duration: 0))
+        // determine which contact body is body B
+        if(contact.bodyA.node?.position == movingOrb.Node.position) {
+            bodyb = contact.bodyA.node!
+        }
+        else{
+            bodyb = contact.bodyB.node!
+        }
+        
+        // determine what row and column body B is in, determine it's index on board
+        let rowB = tileBackground.tileRowIndex(fromPosition: bodyb.position)
+        let colB = tileBackground.tileColumnIndex(fromPosition: bodyb.position)
+        let indexB = indToOrb[rowMajorConversion(column: colB, row: rowB)]
+        let rowMajB = rowMajorConversion(column: colB, row: rowB)
+        
+        // change body B's original position, move it, and update dictionary value at the orb
+        orbs[indexB!].originalPos = [posA[0], posA[1]]
+        orbs[indexB!].Node.run(SKAction.move(to: tileBackground.centerOfTile(atColumn: posA[1], row: posA[0]), duration: 0.5))
+        indToOrb[rowMajB] = rowMajA
+        
+        // change body A's original position and update its dictionary value
         movingOrb.originalPos = [rowB, colB]
-        contact.bodyA.node?.run(SKAction.move(to: tileBackground.centerOfTile(atColumn: colB, row: rowB), duration: 0))
+        indToOrb[rowMajA] = rowMajB
+        
     }
     
     override func didMove(to view: SKView) {
@@ -62,6 +77,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             for column in 0...5{
                 var text = SKTexture() // contains the orb texture
                 let currorb = Orb() // current orb to be initialized
+                indToOrb[rowMajorConversion(column: column, row: row)] = rowMajorConversion(column: column, row: row)
                 
                 let rand = arc4random_uniform(6)
                 switch rand{ // choose color of orb based on random value
@@ -89,7 +105,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 currorb.Node.position = tileBackground!.centerOfTile(atColumn: column, row: row)
                 currorb.originalPos = [row, column]
                 currorb.Node.setScale(1.21)
-                currorb.Node.physicsBody = SKPhysicsBody(circleOfRadius: 60.5)
+                currorb.Node.physicsBody = SKPhysicsBody(circleOfRadius: 10)
                 currorb.Node.physicsBody?.categoryBitMask = 1
                 currorb.Node.physicsBody?.contactTestBitMask = 1
                 currorb.Node.physicsBody?.usesPreciseCollisionDetection = true
@@ -106,16 +122,19 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         for index in 0..<30{
             if(nodes(at:location).contains(orbs[index].Node)){
                 movingOrb = orbs[index]
+                break
             }
         }
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for touch: AnyObject in touches {
-            let location = touch.location(in: self)
-            movingOrb.Node.run(SKAction.moveBy(x:location.x - movingOrb.Node.position.x, y:location.y - movingOrb.Node.position.y, duration: 0))
-         //   print("Moving: \(movingOrb.Node.physicsBody!.contactTestBitMask), \(movingOrb.Node.physicsBody!.categoryBitMask), static: \(orbs[0].Node.physicsBody!.contactTestBitMask), \(orbs[0].Node.physicsBody!.categoryBitMask)")
-        }
+        // only use first touch every time it's moved so it runs faster
+        let touch = touches.first
+        let location = touch!.location(in:self)
         
+        // set boundary for orbs
+        if(location.y < -self.frame.height / 2 + 600 && location.y > -self.frame.height / 2 && location.x > -self.frame.width / 2 && location.x < self.frame.width / 2){
+            movingOrb.Node.run(SKAction.moveBy(x:location.x - movingOrb.Node.position.x, y:location.y - movingOrb.Node.position.y, duration: 0))
+        }
     }
 }

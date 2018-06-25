@@ -119,12 +119,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         let touch = touches.first
         let location = touch!.location(in: self)
-        for index in 0..<30{
-            if(nodes(at:location).contains(orbs[index].Node)){
-                movingOrb = orbs[index]
-                break
-            }
-        }
+        
+        let row = tileBackground.tileRowIndex(fromPosition: location)
+        let col = tileBackground.tileColumnIndex(fromPosition: location)
+        
+        movingOrb = orbs[indToOrb[rowMajorConversion(column: col, row: row)]!]
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {

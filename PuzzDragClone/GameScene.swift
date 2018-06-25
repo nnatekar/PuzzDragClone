@@ -22,7 +22,7 @@ enum Type : String { // all different types of orbs
 class Orb { // contains properties of each orb
     var Node = SKSpriteNode()
     var type = Type.other
-    var originalPos = CGPoint()
+    var originalPos = [Int]()
 }
 
 func rowMajorConversion(column: Int, row: Int) -> Int{ // needed to convert 2D array to 1D
@@ -34,12 +34,23 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     private var orbs = [Orb]() // used to hold entire board of orbs
     private var tileBackground : SKTileMapNode! // contains background of tiles
     private var movingOrb = Orb()
+    private var timesCalled = 0
     
     func didBegin(_ contact: SKPhysicsContact){
-        print("Starting collision")
-        let posA = contact.bodyA.node?.position
-        contact.bodyA.node?.run(SKAction.move(to: (contact.bodyB.node?.position)!, duration: 0))
-        contact.bodyB.node?.run(SKAction.move(to: posA!, duration:0))
+        let posA = movingOrb.originalPos
+       // contact.bodyA.node?.run(SKAction.move(to: (contact.bodyB.node?.position)!, duration: 0))
+       // contact.bodyB.node?.run(SKAction.move(to: posA!, duration:0))
+        let rowB = tileBackground.tileRowIndex(fromPosition: contact.bodyB.node!.position)
+        let colB = tileBackground.tileColumnIndex(fromPosition: contact.bodyB.node!.position)
+        if(timesCalled == 0){
+        print("bodyApos: \(contact.bodyA.node!.position), bodyAmove: \(tileBackground.centerOfTile(atColumn: colB, row: rowB))\nbodyBpos: \(contact.bodyB.node!.position), bodyBmove: \(tileBackground.centerOfTile(atColumn: posA[1], row: posA[0]))\n\n")
+            timesCalled+=1
+        }
+       //
+        
+        contact.bodyB.node?.run(SKAction.move(to: tileBackground.centerOfTile(atColumn: posA[1], row: posA[0]), duration: 0))
+        movingOrb.originalPos = [rowB, colB]
+        contact.bodyA.node?.run(SKAction.move(to: tileBackground.centerOfTile(atColumn: colB, row: rowB), duration: 0))
     }
     
     override func didMove(to view: SKView) {
@@ -76,13 +87,13 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 
                 currorb.Node = SKSpriteNode(texture: text)
                 currorb.Node.position = tileBackground!.centerOfTile(atColumn: column, row: row)
-                currorb.originalPos = currorb.Node.position
+                currorb.originalPos = [row, column]
                 currorb.Node.setScale(1.21)
                 currorb.Node.physicsBody = SKPhysicsBody(circleOfRadius: 60.5)
-                currorb.Node.physicsBody?.categoryBitMask = 0x1 << 1
-                currorb.Node.physicsBody?.contactTestBitMask = 0x1 << 1
-                currorb.Node.physicsBody?.isDynamic = false
+                currorb.Node.physicsBody?.categoryBitMask = 1
+                currorb.Node.physicsBody?.contactTestBitMask = 1
                 currorb.Node.physicsBody?.usesPreciseCollisionDetection = true
+                currorb.Node.physicsBody?.affectedByGravity = false
                 orbs.append(currorb)
                 self.addChild(orbs[rowMajorConversion(column: column, row: row)].Node)
             }
@@ -103,7 +114,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         for touch: AnyObject in touches {
             let location = touch.location(in: self)
             movingOrb.Node.run(SKAction.moveBy(x:location.x - movingOrb.Node.position.x, y:location.y - movingOrb.Node.position.y, duration: 0))
-            print("Moving: \(movingOrb.Node.position.x), \(movingOrb.Node.position.y), static: \(orbs[0].Node.position.x), \(orbs[0].Node.position.y)")
+         //   print("Moving: \(movingOrb.Node.physicsBody!.contactTestBitMask), \(movingOrb.Node.physicsBody!.categoryBitMask), static: \(orbs[0].Node.physicsBody!.contactTestBitMask), \(orbs[0].Node.physicsBody!.categoryBitMask)")
         }
         
     }

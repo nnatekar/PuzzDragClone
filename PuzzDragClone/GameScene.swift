@@ -50,6 +50,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     private var movingClone = clonedOrb()
     private var movingOrb = Orb()
     
+    func skyfall(ind: [Int]){
+        // orbs above garbage first fall down, then all blanks get replaced with new
+    }
+    
     func findMatches() -> [[Int]] {
         var all_matches = [[Int]]()
         
@@ -125,9 +129,24 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         
         // find intersections between horizontal and vertical
+        var i = 0
+        var j = 0
         
-        all_matches += vertical_matches // testing
-        all_matches += horizontal_matches
+        while(i < vertical_matches.count){
+            while(j < horizontal_matches.count){
+                let x = vertical_matches[i].filter(horizontal_matches[j].contains) // intersection between both
+                if(x.count > 0){
+                    var singleMatch = vertical_matches[i] + horizontal_matches[j]
+                    vertical_matches.remove(at: i)
+                    horizontal_matches.remove(at: j)
+                    singleMatch.remove(at: singleMatch.index(of: x[0])!)
+                    all_matches.append(singleMatch)
+                }
+                j+=1
+            }
+            i+=1
+        }
+        all_matches += vertical_matches + horizontal_matches
         return all_matches
     }
     
@@ -175,18 +194,24 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         let matchedSet = findMatches()
         var comboNum = 1
+        var finishedIndices = [Int]()
+        
         for i in 0..<matchedSet.count{
             let label = SKLabelNode(fontNamed: "DIN Condensed")
             label.text = "Combo" + String(comboNum)
             label.fontSize = 31
             comboNum += 1
             for j in 0..<matchedSet[i].count{
-                self.orbs[matchedSet[i][j]].Node.run(SKAction.fadeOut(withDuration: 0.5))
+                finishedIndices.append(matchedSet[i][j])
+                orbs[matchedSet[i][j]].Node.run(SKAction.wait(forDuration: 10))
+                orbs[matchedSet[i][j]].Node.run(SKAction.fadeOut(withDuration: 0.5))
                 label.position = CGPoint(x: orbs[matchedSet[i][j]].Node.position.x, y: orbs[matchedSet[i][j]].Node.position.y)
-                
+                orbs[matchedSet[i][j]].type = Type.other // know that the orb is finished
             }
             self.addChild(label)
         }
+        
+        skyfall(ind: finishedIndices)
     }
     
     override func didMove(to view: SKView) {
@@ -225,7 +250,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 currorb.Node.position = tileBackground!.centerOfTile(atColumn: column, row: row)
                 currorb.originalPos = [row, column]
                 currorb.Node.setScale(1.21)
-                currorb.Node.physicsBody = SKPhysicsBody(circleOfRadius: 25)
+                currorb.Node.physicsBody = SKPhysicsBody(circleOfRadius: 40)
                 currorb.Node.physicsBody?.categoryBitMask = 1
                 currorb.Node.physicsBody?.affectedByGravity = false
                 orbs.append(currorb)

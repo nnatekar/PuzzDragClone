@@ -4,7 +4,7 @@
 //
 //  Created by Neil Natekar on 6/12/18.
 //  Copyright © 2018 None. All rights reserved.
-//
+//  Assets taken from https://github.com/matthargett/padopt
 
 import SpriteKit
 import GameplayKit
@@ -34,6 +34,11 @@ class Orb {
     init(originalOrb: Orb){
         self.type = originalOrb.type
         self.originalPos = originalOrb.originalPos
+    }
+    init(originalOrb: Orb, node: SKSpriteNode){
+        self.type = originalOrb.type
+        self.originalPos = originalOrb.originalPos
+        self.Node = node.copy() as! SKSpriteNode
     }
 }
 
@@ -132,31 +137,47 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         // move down all orbs to replace garbage
         for i in skyfallOne.reversed(){
             orbs[i-6] = orbs[i]
+            orbs[i] = Orb(originalOrb: orbs[i-6], node: orbs[i-6].Node)
             orbs[i].type = Type.other
+            orbs[i].Node.removeFromParent()
             orbs[i-6].originalPos = [orbs[i].originalPos[0] - 1, orbs[i].originalPos[1]] // go down one row
             orbs[i-6].Node.run(SKAction.move(by: CGVector(dx: 0, dy: -125), duration: 0.5)) // move it down
         }
         for i in skyfallTwo.reversed(){
             orbs[i-12] = orbs[i]
+            orbs[i] = Orb(originalOrb: orbs[i-12], node: orbs[i-12].Node)
             orbs[i].type = Type.other
+            orbs[i].Node.removeFromParent()
             orbs[i-12].originalPos = [orbs[i].originalPos[0] - 2, orbs[i].originalPos[1]] // go down one row
             orbs[i-12].Node.run(SKAction.move(by: CGVector(dx: 0, dy: -125 * 2), duration: 0.5)) // move it down
         }
         for i in skyfallThree.reversed(){
             orbs[i-18] = orbs[i]
+            orbs[i] = Orb(originalOrb: orbs[i-18], node: orbs[i-18].Node)
             orbs[i].type = Type.other
+            orbs[i].Node.removeFromParent()
             orbs[i-18].originalPos = [orbs[i].originalPos[0] - 3, orbs[i].originalPos[1]] // go down one row
             orbs[i-18].Node.run(SKAction.move(by: CGVector(dx: 0, dy: -125 * 3), duration: 0.5)) // move it down
         }
         for i in skyfallFour.reversed(){
             orbs[i-24] = orbs[i]
+            orbs[i] = Orb(originalOrb: orbs[i-24], node: orbs[i-24].Node)
             orbs[i].type = Type.other
+            orbs[i].Node.removeFromParent()
             orbs[i-24].originalPos = [orbs[i].originalPos[0] - 4, orbs[i].originalPos[1]] // go down one row
             orbs[i-24].Node.run(SKAction.move(by: CGVector(dx: 0, dy: -125 * 4), duration: 0.5)) // move it down
         }
         
-        
         // next, fill in blank space at the top with new orbs
+        for i in 0..<self.orbs.count{
+            // need to skyfall a new orb
+            if(self.orbs[i].type == Type.other){
+                self.orbs[i].Node.removeFromParent()
+                self.orbs[i] = self.orbCreate(pos: CGPoint(x: self.orbs[i].Node.position.x, y: self.orbs[i].Node.position.y + 125*5))
+                self.orbs[i].Node.run(SKAction.move(by: CGVector(dx:0, dy: -125*5), duration: 0.5))
+                self.addChild(self.orbs[i].Node)
+            }
+        }
         
     }
     
@@ -323,6 +344,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let matchedSet = findMatches()
         var comboNum = 1
         var finishedIndices = [Int]()
+        var labels = [SKLabelNode]()
         
         for i in 0..<matchedSet.count{
             let label = SKLabelNode(fontNamed: "DIN Condensed")
@@ -337,12 +359,15 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 orbs[matchedSet[i][j]].type = Type.other // know that the orb is finished
                 orbs[matchedSet[i][j]].Node.removeFromParent()
             }
-            self.addChild(label)
+            labels.append(label)
         }
         
         // delay skyfall by 2 seconds so user can see the number of combos they made
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             self.skyfall(ind: finishedIndices)
+            for label in labels{
+                label.removeFromParent()
+            }
         }
     }
     

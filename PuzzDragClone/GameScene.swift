@@ -89,9 +89,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         currorb.Node = SKSpriteNode(texture: text)
         currorb.Node.position = pos
-        currorb.originalPos = [tileBackground.tileRowIndex(fromPosition: pos), tileBackground.tileColumnIndex(fromPosition: pos)]
+        if(tileBackground.tileRowIndex(fromPosition: pos) < 5 && tileBackground.tileColumnIndex(fromPosition: pos) < 6) {
+            currorb.originalPos = [tileBackground.tileRowIndex(fromPosition: pos), tileBackground.tileColumnIndex(fromPosition: pos)]
+        }
+        else{
+            currorb.originalPos = [tileBackground.tileRowIndex(fromPosition: pos) - 5, tileBackground.tileColumnIndex(fromPosition: pos)]
+        }
         currorb.Node.setScale(1.21)
-        currorb.Node.physicsBody = SKPhysicsBody(circleOfRadius: 40)
+        currorb.Node.physicsBody = SKPhysicsBody(circleOfRadius: 30)
         currorb.Node.physicsBody?.categoryBitMask = 1
         currorb.Node.physicsBody?.affectedByGravity = false
         return currorb
@@ -305,28 +310,35 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         // determine which contact body is body B
         if(contact.bodyA.node?.position == movingClone.Node.position) {
-            bodyb = contact.bodyA.node!
-        }
-        else{
             bodyb = contact.bodyB.node!
         }
+        else{
+            bodyb = contact.bodyA.node!
+        }
         
-        // determine what row and column body B is in, determine it's index on board
+        // determine what row and column body B is in, determine its index on board
         let rowB = tileBackground.tileRowIndex(fromPosition: bodyb.position)
         let colB = tileBackground.tileColumnIndex(fromPosition: bodyb.position)
         let indexB = rowMajorConversion(column: colB, row: rowB)
+        //print("\(orbs[indexB].type): \(indexB), \(rowB),\(colB)\n\(orbs[indexA].type): \(indexA), \(posA)")
+        
+        print("Row: \(orbs[indexB].originalPos[0]), Column: \(orbs[indexB].originalPos[1])")
+        if((orbs[indexA].originalPos[1] == posA[1] && (orbs[indexA].originalPos[0]) < posA[0]-1 || orbs[indexA].originalPos[0] > posA[0]+1) ||
+            (orbs[indexA].originalPos[0] == posA[0] && (orbs[indexA].originalPos[1]) < posA[1]-1 || orbs[indexA].originalPos[1] > posA[1]+1))
+        {return}
         
         // change body B's original position, move it
-        movingOrb.Node.run(SKAction.move(to: tileBackground.centerOfTile(atColumn: colB, row: rowB), duration: 0))
-        orbs[indexB].originalPos = posA
         orbs[indexB].Node.run(SKAction.move(to: tileBackground.centerOfTile(atColumn: posA[1], row: posA[0]), duration: 0.25))
+        orbs[indexA].originalPos = orbs[indexB].originalPos
+        orbs[indexB].originalPos = posA
+        movingOrb.Node.run(SKAction.move(to: tileBackground.centerOfTile(atColumn: colB, row: rowB), duration: 0))
         
         // switch orbs around in main array
         orbs[indexA] = orbs[indexB]
         orbs[indexB] = movingOrb
         
         // change body A's original position
-        movingClone.originalPos = [rowB, colB]
+        movingClone.originalPos = movingOrb.originalPos
     }
     
     
@@ -340,6 +352,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         movingOrb.Node.physicsBody?.categoryBitMask = 1
         movingOrb.Node.texture = SKTexture(imageNamed: movingOrb.type.rawValue)
         movingClone.Node.removeFromParent()
+        print("\n\(movingOrb.type): \(movingOrb.originalPos), \(rowMajorConversion(column: movingOrb.originalPos[1], row: movingOrb.originalPos[0]))")
         
         let matchedSet = findMatches()
         var comboNum = 1
@@ -359,6 +372,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 orbs[matchedSet[i][j]].type = Type.other // know that the orb is finished
                 orbs[matchedSet[i][j]].Node.removeFromParent()
             }
+            self.addChild(label)
             labels.append(label)
         }
         
@@ -400,6 +414,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let row = tileBackground.tileRowIndex(fromPosition: location)
         let col = tileBackground.tileColumnIndex(fromPosition: location)
         
+        if(!(row < 5 && col < 6)){
+            return
+        }
         // set up orb to be moved, temporarily change categorybitmask so not affected by contact
         movingOrb = orbs[rowMajorConversion(column: col, row: row)]
         movingOrb.Node.physicsBody?.categoryBitMask = 0
@@ -410,7 +427,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         movingClone.Node = SKSpriteNode(texture: SKTexture(imageNamed: movingClone.type.rawValue))
         movingClone.Node.position = movingOrb.Node.position
         movingClone.Node.setScale(1.21)
-        movingClone.Node.physicsBody = SKPhysicsBody(circleOfRadius: 10)
+        movingClone.Node.physicsBody = SKPhysicsBody(circleOfRadius: 30)
         movingClone.Node.physicsBody?.categoryBitMask = 2
         movingClone.Node.physicsBody?.contactTestBitMask = 1
         movingClone.Node.physicsBody?.affectedByGravity = false
@@ -433,7 +450,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         // set boundary for orbs
         if(location.y < -self.frame.height / 2 + 600 && location.y > -self.frame.height / 2 && location.x > -self.frame.width / 2 && location.x < self.frame.width / 2){
-            movingClone.Node.run(SKAction.moveBy(x:location.x - movingClone.Node.position.x, y:location.y - movingClone.Node.position.y, duration: 0))
+            movingClone.Node.run(SKAction.move(to: CGPoint(x: location.x, y: location.y), duration: 0))
         }
     }
 }

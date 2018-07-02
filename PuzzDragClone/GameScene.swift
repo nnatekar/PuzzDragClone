@@ -57,6 +57,23 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     private var movingClone = Orb()
     private var movingOrb = Orb()
     
+    func adjacentHorizontal(checkOrb: Int) -> Int{
+        var retVal = Int()
+        if(checkOrb % 6 == 0){ // nothing adjacent left
+            retVal = -1
+        }
+        else{
+            if(orbs[checkOrb].type == orbs[checkOrb-1].type){ // left value is same type
+                retVal = checkOrb-1
+            }
+            else{ // left value is not same type
+                retVal = -1
+            }
+        }
+        
+        return retVal
+    }
+    
     /**
         Function to create new orbs
         @param pos Position at which orb needs to be created
@@ -186,21 +203,38 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
     }
     
+    // code taken from https://github.com/ethanlu/pazudora-solver
+    func findCluster(index: Int) -> Set<Int>{
+        var cluster = Set<Int>()
+        var search_stack = [index]
+        while(search_stack.count > 0){
+            let currInd = search_stack.popLast()!
+            if(currInd >= 0 && currInd < 30 && !cluster.contains(currInd) && orbs[index].type == orbs[currInd].type){
+                cluster.update(with: currInd)
+                search_stack.append(currInd-6)
+                search_stack.append(currInd+6)
+                search_stack.append(currInd-1)
+                search_stack.append(currInd+1)
+            }
+        }
+        
+        return cluster
+    }
+    
     /**
         Function to determine which orbs in the board are matched
         @return all_matches Indices of all orbs which have been matched
      */
-    func findMatches() -> [[Int]] {
+    func findMatches() -> [Set<Int>] {
         var all_matches = [[Int]]()
         
         // find all vertical matches
         var vertical_matches = [[Int]]()
-        var match = [Int]()
         var colsChecked = [Int]()
-        
+        var match = [Int]()
+        var vertMatchesInd = 0
         for row in 0...2{
             for col in 0...5{
-                
                 // continue if column has already been fully checked
                 if(vertical_matches.count > 0 && colsChecked.contains(col)) {
                     continue
@@ -231,6 +265,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                     }
                     
                     vertical_matches.append(match)
+                    vertMatchesInd += 1
                 }
             }
         }
@@ -293,7 +328,27 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             i+=1
         }
         all_matches += vertical_matches + horizontal_matches
-        return all_matches
+        
+        // now find all clusters around current matches and remove intersections between clusters and all_matches
+        // code from here to end of function taken from https://github.com/ethanlu/pazudora-solver
+        var matchLocations = Set<Int>()
+        for i in 0..<all_matches.count{
+            for j in 0..<all_matches[i].count{
+                matchLocations.insert(all_matches[i][j])
+            }
+        }
+        
+        var clusters = [Set<Int>]()
+        var memoized = Set<Int>()
+        for ind in matchLocations{
+            if(!memoized.contains(ind)){
+                let cluster = findCluster(index: ind)
+                clusters.append(cluster.intersection(matchLocations))
+                memoized = memoized.union(cluster)
+            }
+        }
+        
+        return clusters
     }
     
     
@@ -365,12 +420,12 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 label.text = "Combo" + String(comboNum)
                 label.fontSize = 31
                 comboNum += 1
-                for j in 0..<matchedSet[i].count{
-                    finishedIndices.append(matchedSet[i][j])
-                    orbs[matchedSet[i][j]].Node.run(SKAction.fadeOut(withDuration: 0.5))
-                    label.position = CGPoint(x: orbs[matchedSet[i][j]].Node.position.x, y: orbs[matchedSet[i][j]].Node.position.y)
-                    orbs[matchedSet[i][j]].type = Type.other // know that the orb is finished
-                    orbs[matchedSet[i][j]].Node.removeFromParent()
+                for ind in matchedSet[i]{
+                    finishedIndices.append(ind)
+                    orbs[ind].Node.run(SKAction.fadeOut(withDuration: 0.5))
+                    label.position = CGPoint(x: orbs[ind].Node.position.x, y: orbs[ind].Node.position.y)
+                    orbs[ind].type = Type.other // know that the orb is finished
+                    orbs[ind].Node.removeFromParent()
                 }
                 self.addChild(label)
                 labels.append(label)
@@ -378,8 +433,10 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             
             // delay skyfall by 1 seconds so user can see the number of combos they made
             self.skyfall(ind: finishedIndices)
-            for label in labels{
-                label.removeFromParent()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1){
+                for label in labels{
+                    label.removeFromParent()
+                }
             }
             matchedSet = self.findMatches()
             size = matchedSet.count

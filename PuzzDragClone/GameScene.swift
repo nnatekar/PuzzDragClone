@@ -123,7 +123,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         Function to make orbs fall down and replace matched orbs
         @param ind Indices of orbs that need to be replaced
      */
-    func skyfall(ind: [Int]){
+    func skyfall(ind: [Int]) -> [SKAction]{
+        var skyfallActions = [SKAction]()
         // orbs above garbage first fall down
         var skyfallOne = [Int]() // indices of all orbs that need to fall only one position down
         var skyfallTwo = [Int]() // indices that need to fall two down
@@ -161,46 +162,53 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             orbs[i-6] = orbs[i]
             orbs[i] = Orb(originalOrb: orbs[i-6], node: orbs[i-6].Node)
             orbs[i].type = Type.other
-            orbs[i].Node.removeFromParent()
             orbs[i-6].originalPos = [orbs[i].originalPos[0] - 1, orbs[i].originalPos[1]] // go down one row
-            orbs[i-6].Node.run(SKAction.sequence([SKAction.wait(forDuration: 1), SKAction.move(by: CGVector(dx: 0, dy: -125), duration: 0.5)])) // move it down
+            skyfallActions.append(SKAction.run({
+                self.orbs[i-6].Node.run(SKAction.sequence([SKAction.wait(forDuration: 1), SKAction.move(by: CGVector(dx: 0, dy: -125), duration: 0.5)]))
+            })) // move it down
         }
         for i in skyfallTwo.reversed(){
             orbs[i-12] = orbs[i]
             orbs[i] = Orb(originalOrb: orbs[i-12], node: orbs[i-12].Node)
             orbs[i].type = Type.other
-            orbs[i].Node.removeFromParent()
             orbs[i-12].originalPos = [orbs[i].originalPos[0] - 2, orbs[i].originalPos[1]] // go down one row
-            orbs[i-12].Node.run(SKAction.sequence([SKAction.wait(forDuration: 1), SKAction.move(by: CGVector(dx: 0, dy: -125 * 2), duration: 0.5)])) // move it down
+            skyfallActions.append(SKAction.run({
+                self.orbs[i-12].Node.run(SKAction.sequence([SKAction.wait(forDuration: 1), SKAction.move(by: CGVector(dx: 0, dy: -125 * 2), duration: 0.5)]))
+            })) // move it down
         }
         for i in skyfallThree.reversed(){
             orbs[i-18] = orbs[i]
             orbs[i] = Orb(originalOrb: orbs[i-18], node: orbs[i-18].Node)
             orbs[i].type = Type.other
-            orbs[i].Node.removeFromParent()
             orbs[i-18].originalPos = [orbs[i].originalPos[0] - 3, orbs[i].originalPos[1]] // go down one row
-            orbs[i-18].Node.run(SKAction.sequence([SKAction.wait(forDuration: 1), SKAction.move(by: CGVector(dx: 0, dy: -125 * 3), duration: 0.5)])) // move it down
+            skyfallActions.append(SKAction.run({
+                self.orbs[i-18].Node.run(SKAction.sequence([SKAction.wait(forDuration: 1), SKAction.move(by: CGVector(dx: 0, dy: -125 * 3), duration: 0.5)]))
+            }))// move it down
         }
         for i in skyfallFour.reversed(){
             orbs[i-24] = orbs[i]
             orbs[i] = Orb(originalOrb: orbs[i-24], node: orbs[i-24].Node)
             orbs[i].type = Type.other
-            orbs[i].Node.removeFromParent()
             orbs[i-24].originalPos = [orbs[i].originalPos[0] - 4, orbs[i].originalPos[1]] // go down one row
-            orbs[i-24].Node.run(SKAction.sequence([SKAction.wait(forDuration: 1),SKAction.move(by: CGVector(dx: 0, dy: -125 * 4), duration: 0.5)]))
+            skyfallActions.append(SKAction.run({
+                self.orbs[i-24].Node.run(SKAction.sequence([SKAction.wait(forDuration: 1),SKAction.move(by: CGVector(dx: 0, dy: -125 * 4), duration: 0.5)]))
+            }))
         }
         
         // next, fill in blank space at the top with new orbs
-        for i in 0..<self.orbs.count{
+        for i in 0..<orbs.count{
             // need to skyfall a new orb
-            if(self.orbs[i].type == Type.other){
-                self.orbs[i].Node.removeFromParent()
-                self.orbs[i] = self.orbCreate(pos: CGPoint(x: self.orbs[i].Node.position.x, y: self.orbs[i].Node.position.y + 125*5))
-                self.orbs[i].Node.run(SKAction.sequence([SKAction.wait(forDuration:1),SKAction.move(by: CGVector(dx:0, dy: -125*5), duration: 0.5)]))
-                self.addChild(self.orbs[i].Node)
+            if(orbs[i].type == Type.other){
+                orbs[i].Node.removeFromParent()
+                orbs[i] = orbCreate(pos: CGPoint(x: orbs[i].Node.position.x, y: orbs[i].Node.position.y + 125*5))
+                skyfallActions.append(SKAction.run({
+                    self.orbs[i].Node.run(SKAction.sequence([SKAction.wait(forDuration:1),SKAction.move(by: CGVector(dx:0, dy: -125*5), duration: 0.5)]))
+                    self.addChild(self.orbs[i].Node)
+                }))
             }
         }
         
+        return skyfallActions
     }
     
     // code taken from https://github.com/ethanlu/pazudora-solver
@@ -209,12 +217,24 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         var search_stack = [index]
         while(search_stack.count > 0){
             let currInd = search_stack.popLast()!
-            if(currInd >= 0 && currInd < 30 && !cluster.contains(currInd) && orbs[index].type == orbs[currInd].type){
+            if(currInd >= 0 && currInd < 30 && !cluster.contains(currInd) && orbs[index].type == orbs[currInd].type && currInd % 6 != 0 && currInd % 6 != 5){
                 cluster.update(with: currInd)
                 search_stack.append(currInd-6)
                 search_stack.append(currInd+6)
                 search_stack.append(currInd-1)
                 search_stack.append(currInd+1)
+            }
+            else if(currInd % 6 == 0 && currInd >= 0 && currInd < 30 && !cluster.contains(currInd) && orbs[index].type == orbs[currInd].type){ // don't add currInd - 1
+                cluster.update(with: currInd)
+                search_stack.append(currInd-6)
+                search_stack.append(currInd+6)
+                search_stack.append(currInd+1)
+            }
+            else if(currInd % 6 == 5 && currInd >= 0 && currInd < 30 && !cluster.contains(currInd) && orbs[index].type == orbs[currInd].type){ // don't add currInd + 1
+                cluster.update(with: currInd)
+                search_stack.append(currInd-6)
+                search_stack.append(currInd+6)
+                search_stack.append(currInd-1)
             }
         }
         
@@ -408,31 +428,60 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         var matchedSet = findMatches()
         var size = matchedSet.count
-        var numIter = 0
-        while(size > 0){
+        var completeActions = [SKAction]()
+        var numIter = 0.0
+       // while(size > 0){
             print(size)
             var comboNum = 1
             var finishedIndices = [Int]()
             var labels = [SKLabelNode]()
-            
+            var lastIter = Double(matchedSet.count) / 0.2
+            var saveInd = Int()
             for i in 0..<matchedSet.count{
                 let label = SKLabelNode(fontNamed: "DIN Condensed")
                 label.text = "Combo" + String(comboNum)
                 label.fontSize = 31
                 comboNum += 1
                 for ind in matchedSet[i]{
+                    var innerCount = 1
                     finishedIndices.append(ind)
-                    orbs[ind].Node.run(SKAction.fadeOut(withDuration: 0.5))
+                    let waitAction = SKAction.wait(forDuration: TimeInterval(numIter))
+                    let fadeAction = SKAction.fadeOut(withDuration: 0.25)
+                    let sequence = SKAction.sequence([waitAction, fadeAction])
+                    if(numIter != lastIter && innerCount != matchedSet[i].count){
+                        orbs[ind].Node.run(sequence, completion: {
+                            self.orbs[ind].type = Type.other
+                            self.orbs[ind].Node.removeFromParent()
+                        })
+                    }
+                    else{
+                        saveInd = ind
+                    }
+                     // know that the orb is finished
                     label.position = CGPoint(x: orbs[ind].Node.position.x, y: orbs[ind].Node.position.y)
-                    orbs[ind].type = Type.other // know that the orb is finished
-                    orbs[ind].Node.removeFromParent()
+                    innerCount += 1
                 }
                 self.addChild(label)
                 labels.append(label)
+                numIter += 0.375
             }
-            
+        
             // delay skyfall by 1 seconds so user can see the number of combos they made
-            self.skyfall(ind: finishedIndices)
+            let waitAction = SKAction.wait(forDuration: numIter - 0.375)
+            let fadeAction = SKAction.fadeOut(withDuration: 0.25)
+            let sequence = SKAction.sequence([waitAction, fadeAction])
+        orbs[saveInd].Node.run(sequence, completion:{
+                self.orbs[saveInd].type = Type.other
+                self.orbs[saveInd].Node.removeFromParent()
+                let skyfallAction = self.skyfall(ind: finishedIndices)
+            for action in skyfallAction{
+                self.run(action)
+            }
+        })
+            //let skyfallAction = self.skyfall(ind: finishedIndices)
+           // for action in skyfallAction{
+           // seq = SKAction.sequence([seq, action])
+           // run(seq)
             DispatchQueue.main.asyncAfter(deadline: .now() + 1){
                 for label in labels{
                     label.removeFromParent()
@@ -440,8 +489,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             }
             matchedSet = self.findMatches()
             size = matchedSet.count
-            numIter += 1
-        }
+      //  }
         
             /*    comboFade.append(SKAction.run({
                     for j in 0..<matchedSet[i].count{

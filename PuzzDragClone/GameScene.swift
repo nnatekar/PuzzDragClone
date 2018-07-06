@@ -181,7 +181,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         var comboNum = 1
         var finishedIndices = [Int]()
         var labels = [SKLabelNode]()
-        let lastIter = Double(matchedSet.count) / 0.2
+        let lastIter = Double(matchedSet.count) * 0.375 - 0.375
         var saveInd = Int()
         
         // go through all matches and create a combo label
@@ -190,24 +190,24 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             label.text = "Combo" + String(comboNum)
             label.fontSize = 31
             comboNum += 1
+            var innerCount = 1
             
             // go through all orbs in a combo and get rid of them
             for ind in matchedSet[i]{
-                var innerCount = 1
                 finishedIndices.append(ind)
                 let waitAction = SKAction.wait(forDuration: TimeInterval(numIter))
                 let fadeAction = SKAction.fadeOut(withDuration: 0.25)
                 let sequence = SKAction.sequence([waitAction, fadeAction])
                 
                 // get rid of orb unless it's the last orb to get rid of
-                if(numIter != lastIter && innerCount != matchedSet[i].count){
+                if(numIter == lastIter && innerCount == matchedSet[i].count){
+                    saveInd = ind // save last orb's index
+                }
+                else{
                     orbs[ind].Node.run(sequence, completion: {
                         self.orbs[ind].type = Type.other
                         self.orbs[ind].Node.removeFromParent()
                     })
-                }
-                else{
-                    saveInd = ind // save last orb's index
                 }
                 
                 label.position = CGPoint(x: orbs[ind].Node.position.x, y: orbs[ind].Node.position.y)
@@ -221,13 +221,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     
         // get rid of last orb, then skyfall
-        let waitAction = SKAction.wait(forDuration: numIter - 0.375)
+        let waitAction = SKAction.wait(forDuration: numIter - 0.375+0.05)
         let fadeAction = SKAction.fadeOut(withDuration: 0.25)
-        let sequence = SKAction.sequence([waitAction, fadeAction])
-        
-        orbs[saveInd].Node.run(sequence, completion:{
+        let remove = SKAction.run({
             self.orbs[saveInd].type = Type.other
             self.orbs[saveInd].Node.removeFromParent()
+        })
+        let sequence = SKAction.sequence([waitAction, fadeAction, remove])
+        
+        orbs[saveInd].Node.run(sequence, completion:{
+            //self.orbs[saveInd].type = Type.other
+            //self.orbs[saveInd].Node.removeFromParent()
             let skyfallAction = self.skyfall(ind: finishedIndices)
             for action in skyfallAction{
                 self.run(action)

@@ -28,6 +28,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
      */
     func skyfall(ind: [Int]) -> [SKAction]{
         var skyfallActions = [SKAction]()
+        
         // orbs above garbage first fall down
         var skyfallOne = [Int]() // indices of all orbs that need to fall only one position down
         var skyfallTwo = [Int]() // indices that need to fall two down
@@ -149,10 +150,14 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         {return}
         
         // change body B's original position, move it
+        orbs[indexB].Node.physicsBody?.categoryBitMask = 1 << 3
+        movingClone.Node.physicsBody?.categoryBitMask = 1 << 4
         orbs[indexB].Node.run(SKAction.move(to: tileBackground.centerOfTile(atColumn: posA[1], row: posA[0]), duration: 0.25))
         orbs[indexA].originalPos = orbs[indexB].originalPos
         orbs[indexB].originalPos = posA
         movingOrb.Node.run(SKAction.move(to: tileBackground.centerOfTile(atColumn: colB, row: rowB), duration: 0))
+        orbs[indexB].Node.physicsBody?.categoryBitMask = 1
+        movingClone.Node.physicsBody?.categoryBitMask = 2
         
         // switch orbs around in main array
         orbs[indexA] = orbs[indexB]

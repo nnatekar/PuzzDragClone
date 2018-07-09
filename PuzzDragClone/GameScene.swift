@@ -149,22 +149,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         movingClone.originalPos = movingOrb.originalPos
     }
     
-    
-    /**
-        Function that is called when touches end
-        Detects matches and starts skyfalls
-     */
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        // Move movingOrb to its final location and remove clone
-        self.view?.isUserInteractionEnabled = false
-        movingOrb.originalPos = movingClone.originalPos
-        movingOrb.Node.run(SKAction.move(to: tileBackground.centerOfTile(atColumn: movingOrb.originalPos[1], row: movingOrb.originalPos[0]), duration: 0))
-        movingOrb.Node.physicsBody?.categoryBitMask = 1
-        movingOrb.Node.texture = SKTexture(imageNamed: movingOrb.type.rawValue)
-        movingClone.Node.removeFromParent()
-        
-        // find matches and skyfall new orbs
-        var matchedSet = findMatches(orbs: orbs)
+    func gameLoop(matchedSet: [Set<Int>]) {
+        var nextSet = [Set<Int>()]
+        var size = matchedSet.count
         var numIter = 0.0
         var comboNum = 1
         var finishedIndices = [Int]()
@@ -207,7 +194,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             labels.append(label)
             numIter += 0.375
         }
-    
+        
         // get rid of last orb, then skyfall
         let waitAction = SKAction.wait(forDuration: numIter - 0.375+0.05)
         let fadeAction = SKAction.fadeOut(withDuration: 0.25)
@@ -218,13 +205,19 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let sequence = SKAction.sequence([waitAction, fadeAction, remove])
         
         orbs[saveInd].Node.run(sequence, completion:{
-            //self.orbs[saveInd].type = Type.other
-            //self.orbs[saveInd].Node.removeFromParent()
-            //let skyfallAction = self.skyfall(ind: finishedIndices)
-            //for action in skyfallAction{
-             //   self.run(action)
-             //   }
-            self.skyfall(ind: finishedIndices)
+            let action1 = SKAction.run {
+                self.skyfall(ind: finishedIndices)
+            }
+            let action2 = SKAction.wait(forDuration: 1.5)
+            let action3 = SKAction.run{
+                nextSet = findMatches(orbs: self.orbs)
+                size = matchedSet.count
+                if(size > 0){
+                    self.gameLoop(matchedSet: nextSet)
+                }
+            }
+            self.run(SKAction.sequence([action1,action2,action3]))
+            
         })
         
         // delay removing combo labels so user can see how many combos they made
@@ -235,9 +228,26 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
         
         // TODO: find matches after skyfall, then get rid of orbs and skyfall again
-        matchedSet = findMatches(orbs: orbs)
+        //matchedSet = findMatches(orbs: orbs)
         
         
+    }
+    
+    /**
+        Function that is called when touches end
+        Detects matches and starts skyfalls
+     */
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        // Move movingOrb to its final location and remove clone
+        self.view?.isUserInteractionEnabled = false
+        movingOrb.originalPos = movingClone.originalPos
+        movingOrb.Node.run(SKAction.move(to: tileBackground.centerOfTile(atColumn: movingOrb.originalPos[1], row: movingOrb.originalPos[0]), duration: 0))
+        movingOrb.Node.physicsBody?.categoryBitMask = 1
+        movingOrb.Node.texture = SKTexture(imageNamed: movingOrb.type.rawValue)
+        movingClone.Node.removeFromParent()
+        
+        // find matches and skyfall new orbs
+        gameLoop(matchedSet: findMatches(orbs: orbs))
     }
     
     

@@ -145,19 +145,11 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         let colB = tileBackground.tileColumnIndex(fromPosition: bodyb.position)
         let indexB = rowMajorConversion(column: colB, row: rowB)
         
-        if((orbs[indexA].originalPos[1] == posA[1] && (orbs[indexA].originalPos[0]) < posA[0]-1 || orbs[indexA].originalPos[0] > posA[0]+1) ||
-            (orbs[indexA].originalPos[0] == posA[0] && (orbs[indexA].originalPos[1]) < posA[1]-1 || orbs[indexA].originalPos[1] > posA[1]+1))
-        {return}
-        
         // change body B's original position, move it
-        orbs[indexB].Node.physicsBody?.categoryBitMask = 1 << 3
-        movingClone.Node.physicsBody?.categoryBitMask = 1 << 4
-        orbs[indexB].Node.run(SKAction.move(to: tileBackground.centerOfTile(atColumn: posA[1], row: posA[0]), duration: 0.25))
+        orbs[indexB].Node.run(SKAction.move(to: tileBackground.centerOfTile(atColumn: posA[1], row: posA[0]), duration: 0.07))
         orbs[indexA].originalPos = orbs[indexB].originalPos
         orbs[indexB].originalPos = posA
-        movingOrb.Node.run(SKAction.move(to: tileBackground.centerOfTile(atColumn: colB, row: rowB), duration: 0))
-        orbs[indexB].Node.physicsBody?.categoryBitMask = 1
-        movingClone.Node.physicsBody?.categoryBitMask = 2
+        movingOrb.Node.run(SKAction.move(to: tileBackground.centerOfTile(atColumn: colB, row: rowB), duration: 0.07))
         
         // switch orbs around in main array
         orbs[indexA] = orbs[indexB]
@@ -174,6 +166,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
      */
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         // Move movingOrb to its final location and remove clone
+        self.view?.isUserInteractionEnabled = false
         movingOrb.originalPos = movingClone.originalPos
         movingOrb.Node.run(SKAction.move(to: tileBackground.centerOfTile(atColumn: movingOrb.originalPos[1], row: movingOrb.originalPos[0]), duration: 0))
         movingOrb.Node.physicsBody?.categoryBitMask = 1
@@ -252,6 +245,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         // TODO: find matches after skyfall, then get rid of orbs and skyfall again
         matchedSet = findMatches(orbs: orbs)
+        
+        self.view?.isUserInteractionEnabled = true
     }
     
     
